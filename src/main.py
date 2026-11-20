@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from services.create_connection import create_connection
 from services.seed_data import run_seed
+from utils.print_table import print_table
 
 load_dotenv()
 
@@ -15,10 +16,19 @@ def main():
     bogota_available_stock = list(db.products.find({
         'stock.by_warehouse.bogota': {'$gte': 20},
         'price': {'$lt': 500000}
-    }))
+    }).limit(5))
 
-    print(bogota_available_stock)
-    
+    average_prices = list(db.products.aggregate([
+        {
+            '$group': {
+                '_id': None,
+                'avgAmount': { '$avg': { '$multiply': ["$price", "$stock.total"] } },
+                'avgQuantity': {'$avg': "$stock.total"}
+            }
+        }]))
+
+    print_table(bogota_available_stock)
+    print_table(average_prices)
 
 if __name__ == '__main__':
     main()
